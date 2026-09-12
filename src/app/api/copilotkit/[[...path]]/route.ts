@@ -27,7 +27,10 @@ export const OPTIONS = app.fetch;
 
 export async function POST(request: Request) {
   const url = new URL(request.url);
-  const missionId = url.searchParams.get("missionId") || "";
+  const missionId =
+    url.searchParams.get("missionId") ||
+    request.headers.get("x-pact-mission-id") ||
+    "";
   if (!/^[0-9a-f-]{36}$/i.test(missionId)) {
     return Response.json(
       { error: "Activate a mission before starting the agent." },

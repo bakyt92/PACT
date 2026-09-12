@@ -133,7 +133,10 @@ export function PactAgent({ state, command }: { state: RuntimeSnapshot; command:
         </div>
         <span className="badge verified">Mission gated</span>
       </div>
-      <CopilotKitProvider runtimeUrl={`/api/copilotkit?missionId=${mission.id}`}>
+      <CopilotKitProvider
+        runtimeUrl="/api/copilotkit"
+        headers={{ "x-pact-mission-id": mission.id }}
+      >
         <PactAgentTools state={state} command={command} />
         <CopilotChat
           key={mission.id}
