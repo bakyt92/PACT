@@ -35,7 +35,7 @@ where the approved result is useful and persistent.
 | CopilotKit | Runtime reports streaming/client-tool support; live AG-UI run produced the proposal tool call. | Model-only local web integration; no managed Intelligence claim. Browser UI automation was unavailable. |
 | Exa | Live bounded search returned three PACT-stored sources. | Source membership is provenance, not automatic factual verification. |
 | Ambiguous AI | Live identity and `auth_whoami`/`create_task`/`get_task` schemas observed for the bound workspace. | No live create was performed because Auth0 is blocked. |
-| Auth0 | Offline real-`jose` RS256 negative/positive verification passes. | **BLOCKED live:** tenant/audience/client credentials are absent, so no token was minted and no task dispatched. |
+| Auth0 | Live client-credentials token minted and verified (audience `https://pact.demo/api`, `create:followups` scope, executor `…@clients`); Execute created Ambiguous task `385ab713-080d-47d8-9ffc-b86483575099` and read it back by ID. Offline real-`jose` RS256 negative/positive verification also passes. | Live verification used the developer tenant configured on 12 September 2026. |
 
 Sponsor acknowledgements required by the organizer should be added only after
 current Paris instructions and handles are verified. An acknowledgement does
@@ -48,11 +48,16 @@ not imply that sponsor's tool was integrated.
 - Live activation: PASS; server bound the observed Ambiguous workspace.
 - Live PACT → Exa → CopilotKit/OpenAI proposal: PASS.
 - Live exact approval then revoke: PASS; no provider write occurred.
-- Live Execute: BLOCKED before dispatch by missing Auth0 configuration.
+- Live Execute: PASS; a real Auth0 token was minted and verified, the single
+  write slot was atomically claimed, and Ambiguous task
+  `385ab713-080d-47d8-9ffc-b86483575099` was created and read back by the same
+  ID (execution `VERIFIED`, read-back title matched).
 - Approve → revoke → `MISSION_REVOKED` with zero adapter calls: PASS
   `OFFLINE_ONLY` with the same runtime entry point and a locally signed JWT.
-- Visible browser flow: `NOT_RUN`; the available computer-use surface exposed
-  no browser target. Use the manual recording steps in `README.md`.
+  The live denial demo has not yet been recorded.
+- Visible browser flow: PASS; the full Activate → research → propose → approve →
+  execute → read-back path was driven manually through the UI on
+  12 September 2026. Automated computer-use browser capture was `NOT_RUN`.
 
 PACT does not promise distributed exactly-once behavior, undo, in-flight
 cancellation, arbitrary-chat DLP, universal prompt-injection immunity, or an
@@ -77,8 +82,9 @@ independent OS/process boundary. It uses public synthetic brief data only.
 - [ ] Add two-minute video URL: `<VIDEO_URL>`
 - [ ] Add public post URL: `<POST_URL>`
 - [ ] Add current Paris organizer-required acknowledgements/handles.
-- [ ] Configure and verify live Auth0 M2M audience/scope/identity.
-- [ ] Record a real Ambiguous create and same-ID read-back through ordinary UI.
+- [x] Configure and verify live Auth0 M2M audience/scope/identity.
+- [x] Record a real Ambiguous create and same-ID read-back through ordinary UI
+      (task `385ab713-080d-47d8-9ffc-b86483575099`, 12 September 2026).
 - [ ] Run `npm run secrets:check` and a dedicated secret scanner if available.
 - [ ] Inspect staged/tracked files and `.env*` history before publishing.
 - [ ] Rotate/revoke the credential previously exposed in chat.

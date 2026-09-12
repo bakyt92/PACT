@@ -23,11 +23,12 @@ Observed locally on 12 September 2026:
 | Exa | VERIFIED | Bounded probe and PACT-admitted search returned stored source evidence. |
 | CopilotKit | VERIFIED | Runtime `/info` reported streaming/client tools; an AG-UI run completed and produced the proposal tool call. Managed Intelligence is not used or required. |
 | Ambiguous | VERIFIED (read/schema) | Live identity is bound to workspace `bd04a7fc-13b9-4eda-87a6-52cc9307cd72`; `auth_whoami`, `create_task`, and `get_task` schemas were observed. No task was written during verification. |
-| Auth0 | BLOCKED | `AUTH0_DOMAIN`, audience, client ID, and client secret are absent. Live Execute therefore stops before dispatch. |
+| Auth0 | VERIFIED | A real client-credentials token was minted and verified (audience `https://pact.demo/api`, `create:followups` scope, executor subject `…@clients`). Live Execute created Ambiguous task `385ab713-080d-47d8-9ffc-b86483575099` and read it back by the same ID (execution `VERIFIED`). |
 
-The offline test suite verifies the complete Auth0/PACT/Ambiguous boundary with
-locally signed test JWTs and provider doubles. That is `OFFLINE_ONLY`, not a
-claim that the missing live Auth0 tenant configuration works.
+The offline test suite additionally verifies the complete Auth0/PACT/Ambiguous
+boundary with locally signed test JWTs and provider doubles, independent of any
+live tenant. The live path above was exercised through the ordinary UI on
+12 September 2026.
 
 ## Install and run
 
