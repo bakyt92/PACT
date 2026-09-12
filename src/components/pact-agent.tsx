@@ -47,7 +47,7 @@ function PactAgentTools({ state, command }: { state: RuntimeSnapshot; command: C
         {
           title: "Research and propose",
           message:
-            "Research public providers for the Voice AI Pilot — France. Distinguish voice interaction from clinical documentation, then propose one evidence-backed comparison task for exact page review.",
+            "Research public providers for the Voice AI Pilot: France. Distinguish voice interaction from clinical documentation, then propose one evidence-backed comparison task for exact page review.",
         },
       ],
       available: "before-first-message",

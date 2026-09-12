@@ -220,7 +220,7 @@ export class SqlitePactStore implements PactStore {
         )
         .run(
           input.id,
-          "evidence-backed follow-up for Voice AI Pilot — France",
+          "evidence-backed follow-up for Voice AI Pilot: France",
           input.workspaceId,
           input.workspaceName,
           CONSTITUTION_VERSION,

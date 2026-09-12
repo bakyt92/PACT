@@ -10,7 +10,67 @@ type State = RuntimeSnapshot & {
 };
 
 function formatTime(value: number | null) {
-  return value ? new Date(value).toLocaleTimeString() : "—";
+  return value ? new Date(value).toLocaleTimeString() : "-";
+}
+
+function cleanDashes(value: string) {
+  return value.replace(/[—–]/g, "-");
+}
+
+function formatEventType(value: string) {
+  return value
+    .toLowerCase()
+    .replaceAll("_", " ")
+    .replace(/^./, (letter) => letter.toUpperCase());
+}
+
+function eventTone(type: string) {
+  if (type.includes("DENIED") || type.includes("REVOKED")) return "denied";
+  if (type.includes("APPROVED") || type.includes("VERIFIED")) return "success";
+  if (type.includes("CREATED") || type.includes("STORED")) return "created";
+  return "neutral";
+}
+
+const partners = [
+  { name: "AI Thinkers", slug: "ai-thinkers", role: "Builder" },
+  { name: "OpenAI", slug: "openai" },
+  { name: "Exa", slug: "exa" },
+  { name: "CopilotKit", slug: "copilotkit" },
+  { name: "Auth0", slug: "auth0" },
+  { name: "Ambiguous", slug: "ambiguous" },
+] as const;
+
+function PartnerSymbol({ slug }: { slug: (typeof partners)[number]["slug"] }) {
+  if (slug === "ai-thinkers") {
+    return (
+      <svg viewBox="0 0 28 28" aria-hidden="true">
+        <path d="M6 21 14 5l8 16M10 16h8" />
+        <circle cx="6" cy="21" r="2" /><circle cx="14" cy="5" r="2" /><circle cx="22" cy="21" r="2" />
+      </svg>
+    );
+  }
+  if (slug === "exa") {
+    return <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 3c1.2 6.4 4.6 9.8 11 11-6.4 1.2-9.8 4.6-11 11-1.2-6.4-4.6-9.8-11-11 6.4-1.2 9.8-4.6 11-11Z" /></svg>;
+  }
+  if (slug === "copilotkit") {
+    return (
+      <svg viewBox="0 0 28 28" aria-hidden="true">
+        <rect x="4" y="4" width="8" height="8" rx="2" /><rect x="16" y="4" width="8" height="8" rx="2" />
+        <rect x="4" y="16" width="8" height="8" rx="2" /><rect x="16" y="16" width="8" height="8" rx="2" />
+      </svg>
+    );
+  }
+  if (slug === "auth0") {
+    return <svg viewBox="0 0 28 28" aria-hidden="true"><path d="m14 3 10 8-3.8 12.2L14 25l-6.2-1.8L4 11l10-8Zm0 5-4.6 8.2L14 21l4.6-4.8L14 8Z" /></svg>;
+  }
+  if (slug === "ambiguous") {
+    return <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="11" cy="14" r="7" /><circle cx="17" cy="14" r="7" /></svg>;
+  }
+  return (
+    <svg viewBox="0 0 28 28" aria-hidden="true">
+      <circle cx="14" cy="14" r="9" /><path d="M14 5v18M5 14h18M8 8l12 12M20 8 8 20" />
+    </svg>
+  );
 }
 
 export default function Home() {
@@ -95,8 +155,11 @@ export default function Home() {
   return (
     <main className="shell">
       <header className="hero">
-        <div>
-          <p className="eyebrow">Policy · Authority · Contract · Trust</p>
+        <div className="hero-copy">
+          <div className="brand-line">
+            <span className="pact-mark" aria-hidden="true">P</span>
+            <p className="eyebrow">Policy · Authority · Contract · Trust</p>
+          </div>
           <h1>Give agents objectives. Not unlimited authority.</h1>
           <p className="lede">
             An AI coworker researches and creates work items in the team&apos;s
@@ -118,14 +181,14 @@ export default function Home() {
             <div className="panel-heading">
               <div>
                 <p className="eyebrow">Selected brief</p>
-                <h2>{state.brief.title}</h2>
+                <h2>{cleanDashes(state.brief.title)}</h2>
               </div>
               <span className="badge configured">Synthetic public data</span>
             </div>
-            <p>{state.brief.objective}</p>
+            <p>{cleanDashes(state.brief.objective)}</p>
             <ul>
               {state.brief.requirements.map((requirement) => (
-                <li key={requirement}>{requirement}</li>
+                <li key={requirement}>{cleanDashes(requirement)}</li>
               ))}
             </ul>
             <div className="privacy-proof">
@@ -149,7 +212,7 @@ export default function Home() {
             </div>
             {mission ? (
               <dl className="facts">
-                <div><dt>Destination</dt><dd>{mission.workspaceName} · workspace-only</dd></div>
+                <div><dt>Destination</dt><dd>{cleanDashes(mission.workspaceName)} · workspace-only</dd></div>
                 <div><dt>Assignment</dt><dd>Unassigned</dd></div>
                 <div><dt>Searches</dt><dd>{mission.searchLimit - mission.searchUsed} / {mission.searchLimit} left</dd></div>
                 <div><dt>Write dispatch</dt><dd>{mission.writeLimit - mission.writeUsed} / {mission.writeLimit} left</dd></div>
@@ -185,8 +248,8 @@ export default function Home() {
                 {state.evidence.map((item) => (
                   <article className="source" key={item.id}>
                     <span className="source-id">{item.id.slice(0, 8)}</span>
-                    <h3>{item.title}</h3>
-                    <p>{item.excerpt}</p>
+                    <h3>{cleanDashes(item.title)}</h3>
+                    <p>{cleanDashes(item.excerpt)}</p>
                     <a href={item.url} target="_blank" rel="noreferrer">Open public source</a>
                   </article>
                 ))}
@@ -206,8 +269,8 @@ export default function Home() {
                   <div><dt>Scope</dt><dd>Workspace-only · unassigned</dd></div>
                   <div><dt>Hash</dt><dd className="mono">{proposal.payloadHash.slice(0, 16)}…</dd></div>
                 </dl>
-                <h3 className="proposal-title">{proposal.payload.title}</h3>
-                <p className="proposal-description">{proposal.payload.description}</p>
+                <h3 className="proposal-title">{cleanDashes(proposal.payload.title)}</h3>
+                <p className="proposal-description">{cleanDashes(proposal.payload.description)}</p>
                 <div className="actions">
                   <button
                     className="primary"
@@ -250,19 +313,46 @@ export default function Home() {
             </section>
           ) : null}
 
-          <section className="panel timeline-panel">
-            <div className="panel-heading"><div><p className="eyebrow">PACT audit</p><h2>Event timeline</h2></div></div>
-            <ol className="timeline">
-              {state.events.slice().reverse().map((event) => (
-                <li key={event.id}>
-                  <time>{formatTime(event.at)}</time>
-                  <div><strong>{event.type.replaceAll("_", " ")}</strong>{event.reason ? <span>{event.reason}</span> : null}</div>
-                </li>
-              ))}
-            </ol>
-          </section>
         </div>
       </div>
+
+      <section className="panel timeline-panel audit-wide">
+        <div className="panel-heading audit-heading">
+          <div><p className="eyebrow">PACT audit</p><h2>Event timeline</h2></div>
+          <span className="badge audit-count">{state.events.length} events</span>
+        </div>
+        <p className="audit-intro">A concise, immutable trail of authority decisions.</p>
+        <ol className="timeline">
+          {state.events.slice().reverse().map((event) => (
+            <li className={eventTone(event.type)} key={event.id}>
+              <div className="timeline-rail" aria-hidden="true"><span /></div>
+              <div className="timeline-content">
+                <div className="timeline-meta">
+                  <strong>{formatEventType(event.type)}</strong>
+                  <time>{formatTime(event.at)}</time>
+                </div>
+                {event.reason ? <span className="timeline-reason">{cleanDashes(event.reason)}</span> : null}
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <footer className="partners-panel">
+        <div className="partners-copy">
+          <p className="eyebrow">The people and tools behind PACT</p>
+          <h2>Built by <span>AI Thinkers</span> with help from our verified technology stack.</h2>
+        </div>
+        <div className="partner-logos" aria-label="Project partners and technology stack">
+          {partners.map((partner) => (
+            <div className={`partner-logo ${partner.slug}`} key={partner.name} aria-label={partner.name}>
+              <span className="partner-symbol"><PartnerSymbol slug={partner.slug} /></span>
+              <span className="partner-name">{partner.name}</span>
+              {"role" in partner ? <span className="partner-role">{partner.role}</span> : null}
+            </div>
+          ))}
+        </div>
+      </footer>
 
       {(notice || error) ? (
         <div role={error ? "alert" : "status"} className={`toast ${error ? "toast-error" : ""}`}>
@@ -272,4 +362,3 @@ export default function Home() {
     </main>
   );
 }
-

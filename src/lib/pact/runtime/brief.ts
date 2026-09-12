@@ -13,7 +13,7 @@ export interface VoiceAiBrief {
 
 export const VOICE_AI_BRIEF: VoiceAiBrief = {
   public: {
-    title: "Voice AI Pilot — France",
+    title: "Voice AI Pilot: France",
     market: "France",
     objective:
       "Research public providers relevant to voice interaction and clinical documentation, keeping those categories distinct.",
