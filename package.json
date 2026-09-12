@@ -1,0 +1,41 @@
+{
+  "name": "pact",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env --env-file-if-exists=.env.local ./node_modules/next/dist/bin/next dev --turbopack -p 3100 -H 127.0.0.1",
+    "start": "node --env-file-if-exists=.env --env-file-if-exists=.env.local ./node_modules/next/dist/bin/next start -p 3100 -H 127.0.0.1",
+    "build": "node --env-file-if-exists=.env --env-file-if-exists=.env.local ./node_modules/next/dist/bin/next build",
+    "preflight": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --import tsx scripts/preflight.ts",
+    "secrets:check": "node scripts/secret-check.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test src/lib/pact/runtime/runtime.test.ts src/lib/pact/adapters/auth0.test.ts",
+    "verify": "npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^3.0.36",
+    "@copilotkit/react-core": "1.70.1",
+    "@copilotkit/runtime": "1.70.3",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "exa-js": "^2.19.0",
+    "jose": "^6.1.0",
+    "next": "^15.5.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tsx": "^4.23.1",
+    "typescript": "^5.7.0"
+  },
+  "overrides": {
+    "@ag-ui/client": "0.0.59"
+  }
+}

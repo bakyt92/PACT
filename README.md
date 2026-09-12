@@ -1,107 +1,179 @@
 # PACT
 
-> A constitutional runtime for AI agents.
+> Give agents objectives. Not unlimited authority.
 
-PACT gives an AI agent a limited mission instead of unlimited authority. The agent can understand a real work context and prepare a useful action, but PACT decides whether that action is allowed, asks a person to approve the exact result, and checks the permission again immediately before execution.
+PACT is a constitutional runtime behind a workspace-connected AI coworker. For
+the **Voice AI Pilot — France** demo, the coworker researches public providers,
+prepares one evidence-backed Ambiguous task, and waits for a person to approve
+the exact stored action. A separate Execute click rechecks current authority,
+verifies an Auth0 service identity, atomically claims the write, and only then
+calls Ambiguous.
 
-## The problem
+The selected brief makes the research relevant; the connected workspace makes
+the result useful and persistent. The page is connected to Ambiguous—it is not
+presented as embedded inside Ambiguous.
 
-Prompt instructions and a button labelled `Approve` are not sufficient execution controls. A model can produce a correctly shaped request for the wrong project, a browser can send different arguments from the ones the user reviewed, and an old approval can remain usable after the mission has been revoked.
+## Current integration status
 
-PACT connects policy, mission scope, human approval, execution, and the external receipt in one enforceable path.
+Observed locally on 12 September 2026:
 
-## MVP demonstration
+| Integration | Status | Evidence |
+| --- | --- | --- |
+| OpenAI | VERIFIED | A bounded `gpt-4.1-mini` probe and a CopilotKit streamed agent run completed. No `MODEL`/`OPENAI_MODEL` value is currently configured, so this documented default was used. |
+| Exa | VERIFIED | Bounded probe and PACT-admitted search returned stored source evidence. |
+| CopilotKit | VERIFIED | Runtime `/info` reported streaming/client tools; an AG-UI run completed and produced the proposal tool call. Managed Intelligence is not used or required. |
+| Ambiguous | VERIFIED (read/schema) | Live identity is bound to workspace `bd04a7fc-13b9-4eda-87a6-52cc9307cd72`; `auth_whoami`, `create_task`, and `get_task` schemas were observed. No task was written during verification. |
+| Auth0 | BLOCKED | `AUTH0_DOMAIN`, audience, client ID, and client secret are absent. Live Execute therefore stops before dispatch. |
 
-The demo uses one project in an Ambiguous workspace and one supported action: creating a task.
+The offline test suite verifies the complete Auth0/PACT/Ambiguous boundary with
+locally signed test JWTs and provider doubles. That is `OFFLINE_ONLY`, not a
+claim that the missing live Auth0 tenant configuration works.
 
-1. A user selects a source task from the `Voice AI Pilot` project.
-2. PACT removes closed fields before the context reaches the model.
-3. OpenAI prepares a concrete follow-up task for the selected assignee.
-4. The user reviews the exact project, assignee, due date, title, and description.
-5. PACT re-checks the mission and dispatches the approved task through the Ambiguous adapter.
-6. The real task ID is returned and read back from the external workspace.
-7. A second waiting proposal is blocked after `Revoke mission` is pressed.
+## Install and run
 
-The important negative case is that the old approval cannot authorize a new action after revocation.
+Requirements: Node.js 22.13 or newer and npm. Node 22.19 is the verified local
+runtime. The application is one Next.js package; it does not create workspace
+packages or a second service.
 
-## How authorization works
-
-| Concept | Purpose |
-| --- | --- |
-| Constitution | Versioned system rules the agent cannot change, such as no writes outside the mission scope and no use of closed fields |
-| Mission Contract | The time-limited scope for one mission: workspace, project, source task, assignee, allowed actions, and write limit |
-| Action Proposal | The immutable action arguments shown to the user and stored by the server |
-| Human Approval | Approval bound to the stored proposal ID, content fingerprint, mission, and policy versions |
-| Execution | An idempotent dispatch record that prevents the same proposal from creating duplicate external records |
-| Receipt | The confirmed result from the external system, such as an Ambiguous task ID |
-
-The browser sends only a `proposalId` when the user approves. The server loads the stored action and checks the current mission state, policy versions, project and assignee scope, expiry, and remaining write capacity before calling the external adapter.
-
-## Execution path
-
-```text
-Selected task
-    → filtered context projection
-    → OpenAI structured proposal
-    → PACT policy decision
-    → human approval of exact proposal
-    → authorization re-check
-    → Ambiguous task adapter
-    → external receipt and audit event
+```bash
+npm install
+copy .env.example .env
+npm run preflight
+npm run dev
 ```
 
-The model can propose an action, but it does not receive an unrestricted Ambiguous write tool. All supported external writes pass through the PACT application service.
+Open <http://127.0.0.1:3100>. Use that exact origin: credential-backed mutation
+routes compare it against the configured trusted origin and the server binds to
+loopback.
 
-## MVP guarantees
+The checked-in `.env.example` contains placeholders only. Local scripts
+explicitly load the repository-root `.env` with Node's `--env-file-if-exists`;
+already-set process variables take precedence. The app also recognizes the
+owners' existing server-only aliases `AMBIGUOS_KEY` and `COPILOT_KEY`, but new
+configuration should use the names in `.env.example`. The CopilotKit web
+integration runs in model-only mode and does not turn `COPILOT_KEY` into a
+browser-public credential.
 
-PACT is designed to enforce these properties:
+Auth0 must provide an RS256 API with audience `https://pact.demo/api` and grant
+the exact `create:followups` permission to the configured M2M client. Execute
+expects the verified client-credentials subject for that client. Tokens and all
+provider keys stay server-side.
 
-- A task cannot be created outside the contract’s project or for an unauthorized assignee.
-- Closed source fields are removed before model context is created.
-- Changing the reviewed action invalidates the previous approval.
-- A revoked or expired mission cannot dispatch a waiting proposal.
-- Rejecting a proposal does not call the external adapter.
-- Repeated approval of one proposal cannot create a duplicate task.
-- An exhausted write limit blocks further external writes.
-- A timeout after an external request becomes `unknown_result`; it is not automatically retried as a possible duplicate.
+## Verify
 
-The guarantee covers the PACT-controlled execution path and its adapters. It does not claim to secure arbitrary tools, a compromised server, compromised dependencies, or future integrations that bypass PACT.
-
-## Architecture
-
-The project is organized around a small framework-independent core:
-
-```text
-src/
-  domain/          Constitution, contracts, proposals, decisions, state transitions
-  application/     mission, proposal, approval, revocation, and dispatch use cases
-  infrastructure/  SQLite repositories, OpenAI, and Ambiguous adapters
-  app/api/         thin HTTP route handlers
-  components/      workspace page, proposal card, PACT panel, and event history
-tests/
-  domain/          deterministic policy and lifecycle tests
-  application/     use-case tests with in-process adapters
+```bash
+npm run preflight       # bounded live reads/model/search; never writes
+npm run typecheck
+npm test                # ten compact offline behavior groups
+npm run build
+npm run secrets:check   # redacted high-confidence scan, including local history
 ```
 
-The recommended stack is TypeScript, Next.js, CopilotKit, OpenAI, Ambiguous AI, and local SQLite for mission and audit state. Auth0 is an optional addition for API authentication and scope validation after the core path is working.
+`npm run verify` runs typecheck plus all offline tests. The tests use isolated
+SQLite files, an injected clock, recording adapters, and local RS256 JWTs—no
+paid calls. Node currently labels `node:sqlite` experimental even though it no
+longer needs an experimental flag; the installed runtime and production Next
+route both build successfully.
 
-## Scope
+## Demo flow
 
-The MVP intentionally focuses on one agent, one workspace, and one external write type. Payments, travel booking, Slack/Discord/Telegram workflows, voice input, arbitrary HTTP or shell tools, generated code execution, and generalized policy-language parsing are outside the first implementation.
+1. Click **Activate mission**. PACT binds the immutable 30-minute contract to
+   the provider-verified Ambiguous workspace.
+2. In the CopilotKit panel choose **Research and propose**. `search_public`
+   reserves one of three attempts before Exa; failed outbound attempts still
+   count.
+3. Inspect the public source cards and exact `[PACT DEMO]` task proposal.
+4. Click **Approve**. This records local human review only; it does not write.
+5. Click **Execute**. The server mints and verifies a real Auth0 service token,
+   rechecks PACT, claims the single write in SQLite, and calls Ambiguous.
+6. Verify the real provider ID, click **Read back same ID**, and open the
+   provider-returned link when one exists.
+7. For the denial demo, activate a fresh mission, research/propose, click
+   **Approve**, then **Revoke**, then the still-visible **Execute** button.
+8. Confirm `MISSION_REVOKED` and zero provider create calls. This final live
+   denial requires working Auth0; the exact case is already covered offline.
 
-## Project status
-
-The product and architecture documentation is complete. Implementation is being developed on the [`bakyt1`](https://github.com/bakyt92/PACT/tree/bakyt1) branch. The main planning documents are:
-
-- [General MVP plan](GENERAL.md)
-- [MVP architecture design](docs/superpowers/specs/2026-09-12-pact-mvp-design.md)
-
-## Product direction
-
-PACT is intended to become reusable policy and enforcement infrastructure for VoxOS and other agent systems. The model, channel, and external adapter can change while the core relationship remains:
+## Architecture and enforcement
 
 ```text
-permission → dispatch → receipt
+UI / CopilotKit route
+        ↓
+runtime services (mission → search → proposal → approval → execution)
+        ↓
+pure core policy + transactional PactStore ports
+        ↓
+SQLite / Exa / Auth0 / Ambiguous adapters
 ```
 
-For conversational agents, speech recognition is not authorization, stopping text-to-speech does not cancel an external action, and consent must always have a clear scope.
+The import direction is inward: `core/` has only local pure TypeScript imports;
+runtime code depends on narrow interfaces; adapters and Next routes depend on
+runtime/core. The model gets `search_public` and `task_propose`, never raw MCP,
+shell, HTTP, credentials, or an Ambiguous write tool. Proposal, approval,
+dispatch claim, provider acknowledgement, and verified read-back remain
+separate persisted states.
+
+Search admission and final write claim use short `BEGIN IMMEDIATE` SQLite
+transactions. Network calls never run inside a database transaction. Ambiguous
+schema discovery happens before the final `beforeWrite` callback; the callback
+reloads mission/approval/current epoch and claims a unique execution immediately
+before `create_task`. A timeout after that point becomes `UNKNOWN` and is never
+automatically retried, including after restart.
+
+The synthetic brief stores public fields separately from a private canary. The
+server constructs a fresh allowlisted projection before model or search input;
+tests verify the canary is absent from outbound recordings, snapshots, and
+events. This is **public-data-only** privacy scope: declared private fields are
+excluded, but arbitrary chat DLP is not implemented. Do not enter confidential
+free text.
+
+## Recording script (two minutes)
+
+1. `0:00` Show the brief and bound Ambiguous destination.
+2. `0:10` Explain the team's delegation problem.
+3. `0:15` Activate the 30-minute, three-search, one-write contract.
+4. `0:25` Point to “Declared private fields excluded.”
+5. `0:35` Run real research and show evidence/source URLs.
+6. `0:55` Show CopilotKit's exact `[PACT DEMO]` review card.
+7. `1:05` Approve, Execute, show provider ID/read-back, then the actual task.
+8. `1:20` Activate a fresh mission and prepare/approve a proposal.
+9. `1:35` Revoke, Execute, show the specific denial and unused write slot.
+10. `1:50` Close on the timeline and reusable core; name only verified roles.
+
+Use a fresh mission for every take. Pre-open the safe Ambiguous workspace tab;
+do not show credential/account/token screens. Edited footage must not present a
+cached or earlier call as a new live call.
+
+## Safety limits
+
+- Auth0 proves service identity and permission. It does not prove Victor or
+  Bakyt clicked Approve; the local operator/session check is separate.
+- This modular monolith is a local single-operator demo, not an independent
+  process/OS security boundary. Keep it on loopback with no public tunnel.
+- The SQLite claim prevents duplicate dispatch admission through this runtime;
+  it is not distributed exactly-once execution, cancellation, undo, or a
+  provider-side rollback guarantee.
+- Revocation blocks a new claim. It cannot cancel a provider request that won
+  the claim and may already be in flight.
+- External results are untrusted content. PACT does not claim universal prompt-
+  injection immunity, arbitrary-chat DLP, compromised-server protection, or
+  enforcement for future integrations that bypass this runtime.
+- Acknowledged writes with failed read-back remain verification-pending and are
+  never resent automatically. Persisted unknown claims stay non-retryable.
+
+## Inherited and new work
+
+Starter reference inspected at CopilotKit commit
+`86f547d74e8bd32e047226b0e1fb862cca02a5c7`. Inherited patterns are the pinned
+CopilotKit React/Hono streaming integration, loopback/same-origin posture, and
+the Ambiguous task adapter's live schema validation plus `beforeWrite` hook.
+
+New PACT work in this repository is the fixed Constitution/contract policy,
+authority epochs, allowlisted brief projection, SQLite mission/evidence/
+proposal/execution/event store, atomic search/write admission, exact approval
+hashing, Auth0 client-credentials verifier, Exa tool mediation, CopilotKit PACT
+tools and page, receipt semantics, and the ten compact test groups.
+
+Before publishing, run `npm run secrets:check`, inspect staged/tracked files,
+and repeat with an available dedicated scanner. A credential was previously
+exposed in chat; its owner must rotate/revoke it before repository sharing or
+deployment even if the repository scan is clean.
