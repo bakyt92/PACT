@@ -201,10 +201,11 @@ h2 {
 }
 
 .lede {
-  max-width: 790px;
+  max-width: none;
   margin-bottom: 0;
   color: #bdc9c3;
   font-size: 16px;
+  white-space: nowrap;
 }
 
 .eyebrow {
@@ -748,7 +749,8 @@ code {
 }
 
 @media (max-width: 1080px) {
-  h1 {
+  h1,
+  .lede {
     white-space: normal;
   }
 
